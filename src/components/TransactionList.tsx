@@ -1,8 +1,30 @@
 "use client";
 
 import { useTransactionStore } from "@/store/useTransactionStore";
-import { Calendar, Tag, Trash2 } from "lucide-react";
+import { Calendar, Tag, Trash2, Hash, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+
+// 1. Status Badge Component for high-trust UI
+const StatusBadge = ({ status }: { status: 'pending' | 'success' | 'failed' }) => {
+  const styles = {
+    pending: "bg-amber-50 text-amber-700 border-amber-200",
+    success: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    failed: "bg-rose-50 text-rose-700 border-rose-200",
+  };
+
+  const icons = {
+    pending: <Clock className="w-3 h-3 animate-pulse" />,
+    success: <CheckCircle2 className="w-3 h-3" />,
+    failed: <AlertCircle className="w-3 h-3" />,
+  };
+
+  return (
+    <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${styles[status]}`}>
+      {icons[status]}
+      {status.toUpperCase()}
+    </span>
+  );
+};
 
 export const TransactionList = () => {
   const { transactions, deleteTransaction } = useTransactionStore();
@@ -12,92 +34,77 @@ export const TransactionList = () => {
     setIsMounted(true);
   }, []);
 
-  if(!isMounted) return null
+  if (!isMounted) return null;
 
   if (transactions.length === 0) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm p-12 rounded-2xl shadow-lg border border-white/20">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Tag className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No transactions yet</h3>
-          <p className="text-gray-500">Start by adding your first transaction above</p>
+      <div className="bg-white p-12 rounded-2xl border border-gray-100 text-center">
+        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Hash className="w-8 h-8 text-gray-300" />
         </div>
+        <h3 className="text-lg font-bold text-gray-900">No records found</h3>
+        <p className="text-gray-500 max-w-xs mx-auto text-sm">Your merchant ledger is currently empty. Initiate a settlement to see entries here.</p>
       </div>
     );
   }
-  
+
   return (
-    <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/20">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-orange-100 rounded-lg">
-          <Tag className="w-6 h-6 text-orange-600" />
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Transaction Ledger</h2>
+          <p className="text-sm text-gray-500">Real-time settlement history</p>
         </div>
-        <h2 className="text-2xl font-semibold text-gray-800">Recent Transactions</h2>
-        <div className="ml-auto bg-gray-100 px-3 py-1 rounded-full">
-          <span className="text-sm font-medium text-gray-600">{transactions.length} total</span>
+        <div className="bg-blue-50 px-3 py-1 rounded-md">
+          <span className="text-xs font-bold text-blue-700 uppercase tracking-tight">{transactions.length} Entries</span>
         </div>
       </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {transactions.map((tx) => (
-          <div
-            key={tx.id}
-            className={`group p-4 rounded-xl border-2 transition-all hover:shadow-md ${
-              tx.type === "income"
-                ? "border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 hover:border-green-300"
-                : "border-red-200 bg-gradient-to-r from-red-50 to-rose-50 hover:border-red-300"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-lg ${
-                  tx.type === "income" ? "bg-green-100" : "bg-red-100"
-                }`}>
-                  <Tag className={`w-5 h-5 ${
-                    tx.type === "income" ? "text-green-600" : "text-red-600"
-                  }`} />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800 text-lg">{tx.category}</p>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      {typeof window !== "undefined"
-                        ? new Date(tx.date).toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })
-                        : tx.date}
-                    </span>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50/50">
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date & Ref</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Service/Narrative</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Amount</th>
+              <th className="px-6 py-4"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {transactions.map((tx) => (
+              <tr key={tx.id} className="hover:bg-gray-50/80 transition-colors group">
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-gray-900">
+                    {new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                   </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className={`text-xl font-bold ${
-                    tx.type === "income" ? "text-green-600" : "text-red-600"
-                  }`}>
-                    {tx.type === "income" ? "+" : "-"}₦{tx.amount.toLocaleString()}
-                  </p>
-                </div>
-                <button
-                  onClick={() => deleteTransaction(tx.id)}
-                  className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200"
-                  title="Delete transaction"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+                  <div className="text-[10px] font-mono text-gray-400 mt-0.5">{tx.reference}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-semibold text-gray-800">{tx.category}</div>
+                  <div className="text-xs text-gray-500 truncate max-w-[150px]">{tx.description}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <StatusBadge status={tx.status} />
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <span className={`text-sm font-bold ${tx.type === 'credit' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                    {tx.type === 'credit' ? '+' : '-'} ₦{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={() => deleteTransaction(tx.id)}
+                    className="p-1.5 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
-
   );
 };
