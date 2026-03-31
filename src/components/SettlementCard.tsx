@@ -6,63 +6,37 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const SettlementCard = () => {
+  console.log("SettlementCard Component Rendered");
   const { profile, user, fetchTransactions } = useTransactionStore();
   const [isCopying, setIsCopying] = useState(false);
 
-  const handlePayment = () => {
-    // 1. Safety Check: Ensure user and Paystack script exist
-    if (!user || !user.email) {
-      toast.error("User session not found. Please log in again.");
-      return;
-    }
-
-    if (!(window as any).PaystackPop) {
-      toast.error("Payment gateway loading... please try again in a second.");
-      return;
-    }
-
-   const handlePayment = () => {
-  console.log("💳 Payment Button Clicked");
+ const handlePayment = (e: React.MouseEvent) => {
+  e.preventDefault(); // Stop any parent actions
+  e.stopPropagation(); // Stop the click from "bubbling" up
   
-  // 1. Check if the script loaded
-  if (!(window as any).PaystackPop) {
-    console.error("Paystack script not found in window");
-    toast.error("Payment system still loading...");
-    return;
-  }
+  alert("Button Logic Triggered!"); // If you don't see this, the click isn't reaching the function
+  console.log("💳 Click registered");
 
-  // 2. Check if the Key exists
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
-  console.log("Using Public Key:", publicKey ? "✅ Key Found" : " Key MISSING");
-
-  if (!publicKey) {
-    toast.error("Configuration error: Missing Public Key");
+  
+  if (!(window as any).PaystackPop) {
+    alert("Paystack script missing from Layout");
     return;
   }
 
-  try {
-    const handler = (window as any).PaystackPop.setup({
-      key: publicKey,
-      email: user.email,
-      amount: 5000 * 100,
-      currency: "NGN",
-      metadata: {
-        user_id: user.id,
-      },
-      onClose: () => console.log("🔒 Window closed by user"),
-      callback: (response: any) => {
-        console.log("🎉 Paystack Response:", response);
-        toast.success("Payment Received!");
-        fetchTransactions();
-      },
-    });
-
-    console.log("🚀 Opening Paystack Iframe...");
-    handler.openIframe();
-  } catch (err) {
-    console.error("Crash during Paystack setup:", err);
-  }
-};};
+  const handler = (window as any).PaystackPop.setup({
+    key: publicKey,
+    email: user?.email || "test@merchant.com",
+    amount: 5000 * 100,
+    currency: "NGN",
+    metadata: { user_id: user?.id },
+    callback: () => {
+      toast.success("Success!");
+      fetchTransactions();
+    },
+  });
+  handler.openIframe();
+};
 
   const copyToClipboard = () => {
     if (!profile.merchantId) return;
@@ -118,6 +92,7 @@ export const SettlementCard = () => {
 
       {/* The "Action" Button sits below the card for better UX */}
       <button 
+      type="button"
         onClick={handlePayment}
         className="relative z-[100] w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-95 group"
       >
