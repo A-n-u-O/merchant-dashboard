@@ -20,43 +20,43 @@ export default function AuthPage() {
     const { setUser, fetchProfile } = useTransactionStore();
 
     const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    console.log("Attempting Auth for:", email); // Debugging
+        e.preventDefault();
+        setLoading(true);
+        console.log("Attempting Auth for:", email); // Debugging
 
-    try {
-        if (isLogin) {
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            setUser(data.user);
-            await fetchProfile();
-            router.push("/");
-        } else {
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) throw error;
-            
-            if (data.user) {
-                // IMPORTANT: We wait a split second for the Auth user to propagate
-                const { error: pError } = await supabase.from('profiles').insert([
-                    {
-                        id: data.user.id,
-                        business_name: businessName,
-                        merchant_id: `MID-${Math.floor(100000 + Math.random() * 900000)}`
-                    }
-                ]);
-                if (pError) console.error("Profile DB Error:", pError);
-                
+        try {
+            if (isLogin) {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
                 setUser(data.user);
+                await fetchProfile();
                 router.push("/");
+            } else {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) throw error;
+
+                if (data.user) {
+                    // IMPORTANT: We wait a split second for the Auth user to propagate
+                    const { error: pError } = await supabase.from('profiles').insert([
+                        {
+                            id: data.user.id,
+                            business_name: businessName,
+                            merchant_id: `MID-${Math.floor(100000 + Math.random() * 900000)}`
+                        }
+                    ]);
+                    if (pError) console.error("Profile DB Error:", pError);
+
+                    setUser(data.user);
+                    router.push("/");
+                }
             }
+        } catch (error: any) {
+            console.error("Full Auth Error:", error);
+            toast.error(error.message || "Check your credentials");
+        } finally {
+            setLoading(false);
         }
-    } catch (error: any) {
-        console.error("Full Auth Error:", error);
-        toast.error(error.message || "Check your credentials");
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     return (
         <div className="min-h-screen premium-gradient flex items-center justify-center p-6 relative overflow-hidden">
@@ -101,8 +101,7 @@ export default function AuthPage() {
                                         required
                                         value={businessName}
                                         onChange={(e) => setBusinessName(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-                                        placeholder="e.g. Anu Ventures"
+                                        className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-600 focus:bg-white transition-all duration-300 outline-none" placeholder="e.g. Anu Ventures"
                                         style={{ color: '#111827' }}
                                     />
                                 </div>
@@ -119,8 +118,7 @@ export default function AuthPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-                                placeholder="name@company.com"
+                                className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-600 focus:bg-white transition-all duration-300 outline-none" placeholder="name@company.com"
                                 style={{ color: '#111827' }}
                             />
                         </div>
@@ -135,8 +133,7 @@ export default function AuthPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl font-bold outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-                                placeholder="••••••••"
+                                className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-900 placeholder:text-slate-300 focus:border-blue-600 focus:bg-white transition-all duration-300 outline-none" placeholder="••••••••"
                                 style={{ color: '#111827' }}
                             />
                         </div>

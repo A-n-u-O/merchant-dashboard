@@ -92,11 +92,11 @@ export default function Home() {
         </header>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          <div className="xl:col-span-4 space-y-8">
-            <ProfileSettings />
-            <Summary />
-            <AddTransactionForm />
-          </div>
+          <div className="xl:col-span-4 space-y-8 bg-slate-50/50 p-6 rounded-[2.5rem] border border-white">
+   <ProfileSettings />
+   <Summary />
+   <AddTransactionForm />
+</div>
 
           <div className="xl:col-span-8 space-y-8">
             <div className="glass-card rounded-[2.5rem] p-8 relative overflow-hidden">
