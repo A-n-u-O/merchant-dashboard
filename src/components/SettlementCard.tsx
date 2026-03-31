@@ -14,8 +14,7 @@ export const SettlementCard = () => {
   e.preventDefault(); // Stop any parent actions
   e.stopPropagation(); // Stop the click from "bubbling" up
   
-  alert("Button Logic Triggered!"); // If you don't see this, the click isn't reaching the function
-  console.log("💳 Click registered");
+  console.log("Click registered");
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
   
