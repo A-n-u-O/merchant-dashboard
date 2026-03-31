@@ -52,32 +52,41 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
+        // --- LOGIN FLOW ---
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        
         setUser(data.user);
         await fetchProfile();
-        toast.success("Identity Verified");
+        toast.success("Welcome back, Merchant");
         router.push("/");
       } else {
+        // --- SIGNUP FLOW ---
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         
         if (data.user) {
+          // Immediately create the profile record
           const { error: profileError } = await supabase.from('profiles').insert([
             {
               id: data.user.id,
               business_name: businessName,
-              merchant_id: `MID-${Math.floor(100000 + Math.random() * 900000)}`
+              merchant_id: `MID-${Math.floor(100000 + Math.random() * 900000)}`,
+              tier: "Level 1"
             }
           ]);
+          
           if (profileError) throw profileError;
+
           setUser(data.user);
-          toast.success("Onboarding Complete");
+          await fetchProfile();
+          toast.success("Account created successfully");
           router.push("/");
         }
       }
     } catch (error: any) {
-      toast.error(error.message || "Access Denied");
+      console.error("Auth Error:", error);
+      toast.error(error.message || "Authentication failed. Check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -85,9 +94,9 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen premium-gradient flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Dreamy Background Orbs */}
-      <div className="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-15%] w-[700px] h-[700px] bg-teal-400/15 rounded-full blur-[160px] pointer-events-none" />
+      {/* Animated Background Orbs */}
+      <div className="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[140px] orb pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-15%] w-[700px] h-[700px] bg-teal-400/15 rounded-full blur-[160px] orb pointer-events-none" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl gap-12 items-center relative z-10">
         
@@ -95,14 +104,14 @@ export default function AuthPage() {
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass-card w-full max-w-md mx-auto p-10 rounded-[2.5rem] shadow-2xl border-white/40"
+          className="glass-card w-full max-w-md mx-auto p-10 rounded-[2.5rem] shadow-2xl border border-white/40"
         >
           <div className="text-center mb-10">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20">
               <ShieldCheck className="text-white w-9 h-9" />
             </div>
             <h1 className="text-4xl font-black tracking-tighter text-slate-900 mt-6 uppercase">
-              {isLogin ? "Merchant Login" : "Join the Ledger"}
+              {isLogin ? "Portal Access" : "Join the Ledger"}
             </h1>
             <p className="text-slate-500 mt-2 font-medium">Bank-grade settlement monitoring</p>
           </div>
@@ -111,12 +120,13 @@ export default function AuthPage() {
             <AnimatePresence mode="wait">
               {!isLogin && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-1.5"
+                  key="business-field"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-1.5 overflow-hidden"
                 >
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Entity</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Identity</label>
                   <div className="relative group">
                     <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                     <input
@@ -161,7 +171,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -171,10 +181,10 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:scale-[1.02] active:scale-95 text-white font-black rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-50"
+              className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 active:scale-95 text-white font-black rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin w-6 h-6" /> : (
-                <>{isLogin ? "Authenticate Account" : "Initiate Onboarding"} <ArrowRight className="w-5 h-5" /></>
+                <>{isLogin ? "Authenticate Ledger" : "Create Merchant Account"} <ArrowRight className="w-5 h-5" /></>
               )}
             </button>
           </form>
