@@ -21,25 +21,48 @@ export const SettlementCard = () => {
       return;
     }
 
-    // 2. Initialize Paystack Popup
+   const handlePayment = () => {
+  console.log("💳 Payment Button Clicked");
+  
+  // 1. Check if the script loaded
+  if (!(window as any).PaystackPop) {
+    console.error("Paystack script not found in window");
+    toast.error("Payment system still loading...");
+    return;
+  }
+
+  // 2. Check if the Key exists
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+  console.log("Using Public Key:", publicKey ? "✅ Key Found" : " Key MISSING");
+
+  if (!publicKey) {
+    toast.error("Configuration error: Missing Public Key");
+    return;
+  }
+
+  try {
     const handler = (window as any).PaystackPop.setup({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY, // Ensure this is in your .env
+      key: publicKey,
       email: user.email,
-      amount: 5000 * 100, // ₦5,000 in Kobo
+      amount: 5000 * 100,
       currency: "NGN",
       metadata: {
-        user_id: user.id, // This links the payment to this specific merchant in the webhook
+        user_id: user.id,
       },
-      onClose: () => toast.info("Payment cancelled"),
+      onClose: () => console.log("🔒 Window closed by user"),
       callback: (response: any) => {
-        toast.success("Transaction Authorised! Your ledger will sync in a moment.");
-        // We manually trigger a fetch to see if the webhook already finished
-        setTimeout(() => fetchTransactions(), 3000);
+        console.log("🎉 Paystack Response:", response);
+        toast.success("Payment Received!");
+        fetchTransactions();
       },
     });
 
+    console.log("🚀 Opening Paystack Iframe...");
     handler.openIframe();
-  };
+  } catch (err) {
+    console.error("Crash during Paystack setup:", err);
+  }
+};};
 
   const copyToClipboard = () => {
     if (!profile.merchantId) return;
