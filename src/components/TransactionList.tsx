@@ -23,57 +23,41 @@ const StatusBadge = ({ status }: { status: 'pending' | 'success' | 'failed' }) =
 };
 
 export const TransactionList = () => {
-  const { 
-    transactions, 
-    deleteTransaction, 
-    filters, 
-    setSelectedTransaction,
-    searchQuery 
-  } = useTransactionStore();
+  const { transactions, deleteTransaction, filters, setSelectedTransaction, searchQuery } = useTransactionStore();
 
   const filteredTransactions = transactions.filter((tx) => {
     const statusMatch = filters.status === "all" || tx.status === filters.status;
     const typeMatch = filters.type === "all" || tx.type === filters.type;
-    
     const searchLower = searchQuery.toLowerCase();
-    const searchMatch = 
+    return statusMatch && typeMatch && (
       tx.reference.toLowerCase().includes(searchLower) ||
       tx.category.toLowerCase().includes(searchLower) ||
-      tx.description.toLowerCase().includes(searchLower);
-
-    return statusMatch && typeMatch && searchMatch;
+      tx.description.toLowerCase().includes(searchLower)
+    );
   });
 
   if (transactions.length === 0) {
     return (
-      <div className="glass-card p-12 rounded-[2rem] text-center">
-        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Hash className="w-8 h-8 text-gray-300" />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900">No records found</h3>
-        <p className="text-gray-500 max-w-xs mx-auto text-sm mt-1">Your cloud-synced ledger is currently empty.</p>
+      <div className="glass-card p-8 md:p-12 rounded-[1.5rem] md:rounded-[2rem] text-center">
+        <Hash className="w-8 h-8 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-gray-900">Empty Ledger</h3>
+        <p className="text-gray-500 text-sm mt-1">No cloud records found.</p>
       </div>
     );
   }
 
   return (
-    <div className="glass-card rounded-[2rem] overflow-hidden transition-all duration-500 hover:shadow-2xl">
-      <div className="p-6 border-b border-gray-100/50 flex items-center justify-between bg-white/30">
-        <h2 className="text-lg font-bold text-gray-900">Settlement History</h2>
-        <div className="flex items-center gap-2">
-          {(filters.status !== "all" || filters.type !== "all" || searchQuery !== "") && (
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">
-              Filtered
-            </span>
-          )}
-          <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-lg uppercase tracking-tight">
-            {filteredTransactions.length} Entries
-          </span>
-        </div>
+    <div className="glass-card rounded-[1.5rem] md:rounded-[2rem] overflow-hidden transition-all duration-500 shadow-sm border border-white">
+      <div className="p-4 md:p-6 border-b border-gray-100/50 flex items-center justify-between bg-white/30">
+        <h2 className="text-base md:text-lg font-bold text-gray-900">History</h2>
+        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-lg uppercase">
+          {filteredTransactions.length} Entries
+        </span>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      {/* THE FIX: This container allows the table to scroll sideways on small screens */}
+      <div className="w-full overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left border-collapse min-w-[650px]">
           <thead>
             <tr className="bg-white/50 border-b border-gray-100">
               <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date & Ref</th>
@@ -91,7 +75,7 @@ export const TransactionList = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  transition={{ delay: index * 0.03, ease: "easeOut" }}
+                  transition={{ delay: index * 0.02 }}
                   onClick={() => setSelectedTransaction(tx)} 
                   className="hover:bg-white/60 transition-colors cursor-pointer group"
                 >
@@ -103,7 +87,7 @@ export const TransactionList = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-bold text-gray-800">{tx.category}</div>
-                    <div className="text-xs text-gray-500 truncate max-w-[150px] mt-0.5">{tx.description}</div>
+                    <div className="text-[10px] text-gray-500 truncate max-w-[120px] mt-0.5">{tx.description}</div>
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge status={tx.status} />
@@ -115,11 +99,8 @@ export const TransactionList = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTransaction(tx.id);
-                      }} 
-                      className="p-2 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                      onClick={(e) => { e.stopPropagation(); deleteTransaction(tx.id); }} 
+                      className="p-2 text-gray-300 hover:text-rose-600 rounded-xl transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -127,16 +108,6 @@ export const TransactionList = () => {
                 </motion.tr>
               ))}
             </AnimatePresence>
-            {filteredTransactions.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-20 text-center">
-                  <div className="flex flex-col items-center justify-center text-gray-400">
-                    <Inbox className="w-10 h-10 mb-3 opacity-20" />
-                    <p className="text-sm font-bold text-gray-900">No matches found</p>
-                  </div>
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
