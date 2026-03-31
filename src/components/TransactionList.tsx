@@ -2,6 +2,7 @@
 
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { Trash2, Hash, CheckCircle2, Clock, AlertCircle, Inbox } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const StatusBadge = ({ status }: { status: 'pending' | 'success' | 'failed' }) => {
   const styles = {
@@ -15,23 +16,21 @@ const StatusBadge = ({ status }: { status: 'pending' | 'success' | 'failed' }) =
     failed: <AlertCircle className="w-3 h-3" />,
   };
   return (
-    <span className={`flex items-center w-fit gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${styles[status]}`}>
+    <span className={`flex items-center w-fit gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black border ${styles[status]}`}>
       {icons[status]} {status.toUpperCase()}
     </span>
   );
 };
 
 export const TransactionList = () => {
-  // 1. Pull transactions, delete action, filters, AND searchQuery from the store
   const { 
     transactions, 
     deleteTransaction, 
     filters, 
     setSelectedTransaction,
-    searchQuery // Added this
+    searchQuery 
   } = useTransactionStore();
 
-  // 2. DERIVED STATE: Filter by Status, Type, AND Search Query
   const filteredTransactions = transactions.filter((tx) => {
     const statusMatch = filters.status === "all" || tx.status === filters.status;
     const typeMatch = filters.type === "all" || tx.type === filters.type;
@@ -45,31 +44,29 @@ export const TransactionList = () => {
     return statusMatch && typeMatch && searchMatch;
   });
 
-  // Handle empty state (no transactions at all in the database)
   if (transactions.length === 0) {
     return (
-      <div className="bg-white p-12 rounded-3xl border border-gray-100 text-center shadow-sm">
-        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="glass-card p-12 rounded-[2rem] text-center">
+        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Hash className="w-8 h-8 text-gray-300" />
         </div>
         <h3 className="text-lg font-bold text-gray-900">No records found</h3>
-        <p className="text-gray-500 max-w-xs mx-auto text-sm mt-1">Your merchant ledger is currently empty. Initiate a settlement above.</p>
+        <p className="text-gray-500 max-w-xs mx-auto text-sm mt-1">Your cloud-synced ledger is currently empty.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+    <div className="glass-card rounded-[2rem] overflow-hidden transition-all duration-500 hover:shadow-2xl">
+      <div className="p-6 border-b border-gray-100/50 flex items-center justify-between bg-white/30">
         <h2 className="text-lg font-bold text-gray-900">Settlement History</h2>
         <div className="flex items-center gap-2">
-          {/* Show "Filtered" badge if any status, type, or search filter is active */}
           {(filters.status !== "all" || filters.type !== "all" || searchQuery !== "") && (
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm">
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-1 rounded">
               Filtered
             </span>
           )}
-          <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-md uppercase tracking-tight">
+          <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-lg uppercase tracking-tight">
             {filteredTransactions.length} Entries
           </span>
         </div>
@@ -78,21 +75,25 @@ export const TransactionList = () => {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-white border-b border-gray-100">
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Date & Ref</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Service</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Amount</th>
+            <tr className="bg-white/50 border-b border-gray-100">
+              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Date & Ref</th>
+              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service</th>
+              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+              <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Amount</th>
               <th className="px-6 py-4"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {filteredTransactions.length > 0 ? (
-              filteredTransactions.map((tx) => (
-                <tr 
+            <AnimatePresence mode="popLayout">
+              {filteredTransactions.map((tx, index) => (
+                <motion.tr 
                   key={tx.id} 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ delay: index * 0.03, ease: "easeOut" }}
                   onClick={() => setSelectedTransaction(tx)} 
-                  className="hover:bg-gray-50/50 transition-colors cursor-pointer group"
+                  className="hover:bg-white/60 transition-colors cursor-pointer group"
                 >
                   <td className="px-6 py-4">
                     <div className="text-sm font-bold text-gray-900">
@@ -118,20 +119,20 @@ export const TransactionList = () => {
                         e.stopPropagation();
                         deleteTransaction(tx.id);
                       }} 
-                      className="p-2 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                      className="p-2 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
-                </tr>
-              ))
-            ) : (
+                </motion.tr>
+              ))}
+            </AnimatePresence>
+            {filteredTransactions.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-20 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-400">
                     <Inbox className="w-10 h-10 mb-3 opacity-20" />
                     <p className="text-sm font-bold text-gray-900">No matches found</p>
-                    <p className="text-xs text-gray-500 mt-1">Try adjusting your filters or search terms</p>
                   </div>
                 </td>
               </tr>
