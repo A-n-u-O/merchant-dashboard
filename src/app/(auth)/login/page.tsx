@@ -36,9 +36,10 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
+  
+  // Destructure the actions we need from the store
   const { setUser, fetchProfile } = useTransactionStore();
 
-  // Auto-rotate marketing panel
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % rightPanelContent.length);
@@ -56,9 +57,16 @@ export default function AuthPage() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
+        // 1. Set the user in global state
         setUser(data.user);
+        
+        // 2. Force wait for profile data to hit the store
         await fetchProfile();
-        toast.success("Welcome back, Merchant");
+        
+        // 3. Get the fresh name from the store for the toast
+        const freshProfile = useTransactionStore.getState().profile;
+        toast.success(`Welcome back, ${freshProfile.businessName || 'Merchant'}`);
+        
         router.push("/");
       } else {
         // --- SIGNUP FLOW ---
@@ -66,7 +74,7 @@ export default function AuthPage() {
         if (error) throw error;
         
         if (data.user) {
-          // Immediately create the profile record
+          // Create the profile record in Supabase
           const { error: profileError } = await supabase.from('profiles').insert([
             {
               id: data.user.id,
@@ -80,13 +88,13 @@ export default function AuthPage() {
 
           setUser(data.user);
           await fetchProfile();
-          toast.success("Account created successfully");
+          toast.success("Merchant Account Activated");
           router.push("/");
         }
       }
     } catch (error: any) {
       console.error("Auth Error:", error);
-      toast.error(error.message || "Authentication failed. Check your credentials.");
+      toast.error(error.message || "Authentication failed.");
     } finally {
       setLoading(false);
     }
@@ -94,17 +102,17 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen premium-gradient flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Animated Background Orbs */}
+      {/* Background Orbs */}
       <div className="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[140px] orb pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-15%] w-[700px] h-[700px] bg-teal-400/15 rounded-full blur-[160px] orb pointer-events-none" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl gap-12 items-center relative z-10">
         
-        {/* Left: Form Panel */}
+        {/* Form Panel */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass-card w-full max-w-md mx-auto p-10 rounded-[2.5rem] shadow-2xl border border-white/40"
+          className="glass-card w-full max-w-md mx-auto p-10 rounded-[2.5rem] shadow-2xl border border-white/40 bg-white/80 backdrop-blur-xl"
         >
           <div className="text-center mb-10">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20">
@@ -134,7 +142,7 @@ export default function AuthPage() {
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
                       className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:border-indigo-600 transition-all placeholder:text-slate-300"
-                      placeholder="Anu Ventures Ltd"
+                      placeholder="e.g. Anu Ventures"
                     />
                   </div>
                 </motion.div>
@@ -192,14 +200,14 @@ export default function AuthPage() {
           <div className="mt-8 text-center">
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="text-xs font-black uppercase tracking-[0.1em] text-slate-400 hover:text-indigo-600 transition-colors"
+              className="text-xs font-black uppercase tracking-[0.1em] text-slate-400 hover:text-indigo-600 transition-colors underline decoration-slate-200"
             >
               {isLogin ? "Need a merchant license? Sign Up" : "Registered Merchant? Log In"}
             </button>
           </div>
         </motion.div>
 
-        {/* Right Panel (Marketing) */}
+        {/* Marketing Panel */}
         <div className="hidden lg:flex flex-col items-center justify-center h-full relative">
           <AnimatePresence mode="wait">
             <motion.div
@@ -213,8 +221,7 @@ export default function AuthPage() {
               <div className="mx-auto mb-10 w-24 h-24 bg-white/40 backdrop-blur-2xl rounded-[2rem] flex items-center justify-center shadow-2xl border border-white/50">
                 {rightPanelContent[currentSlide].icon}
               </div>
-
-              <h2 className="text-5xl font-black tracking-tighter text-slate-900 mb-6 uppercase">
+              <h2 className="text-5xl font-black tracking-tighter text-slate-900 mb-6 uppercase leading-[0.9]">
                 {rightPanelContent[currentSlide].title}
               </h2>
               <p className="text-lg text-slate-600 font-medium leading-relaxed">
@@ -222,13 +229,9 @@ export default function AuthPage() {
               </p>
             </motion.div>
           </AnimatePresence>
-
           <div className="flex gap-3 mt-12">
             {rightPanelContent.map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide ? "bg-indigo-600 w-8" : "bg-slate-300 w-2"}`}
-              />
+              <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide ? "bg-indigo-600 w-8" : "bg-slate-300 w-2"}`} />
             ))}
           </div>
         </div>

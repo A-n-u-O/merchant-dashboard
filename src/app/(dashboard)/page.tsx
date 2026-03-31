@@ -17,7 +17,7 @@ export default function Home() {
   const router = useRouter();
   const { user, profile, fetchTransactions, fetchProfile, signOut } = useTransactionStore();
   const [isSyncing, setIsSyncing] = useState(true);
-  
+
   // 💡 TAB STATE: This controls what the user sees
   const [activeTab, setActiveTab] = useState<"dashboard" | "settlements">("dashboard");
 
@@ -52,22 +52,20 @@ export default function Home() {
       {/* --- NAVBAR --- */}
       <nav className="bg-white/70 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
           <div className="font-black text-xl tracking-tighter text-gray-900">
-            {profile.businessName.split(' ')[0]}
-            <span className="text-blue-600">
-              {profile.businessName.split(' ')[1] || 'Portal'}
-            </span>
+            Welcome back, <span className="text-blue-600">{profile.businessName?.split(' ')[0]} {profile.businessName?.split(' ')[1] || 'Merchant'}</span>
           </div>
 
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest">
-              <button 
+              <button
                 onClick={() => setActiveTab("dashboard")}
                 className={`flex items-center gap-2 pb-1 transition-all ${activeTab === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-900'}`}
               >
                 <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("settlements")}
                 className={`flex items-center gap-2 pb-1 transition-all ${activeTab === 'settlements' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400 hover:text-gray-900'}`}
               >
@@ -82,24 +80,24 @@ export default function Home() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
-        
+
         {/* --- DYNAMIC CONTENT --- */}
         {activeTab === "dashboard" ? (
           <div className="space-y-10">
             {/* TOP ROW: Identity & Fast Action */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-4 space-y-6">
-                 <ProfileSettings />
-                 <SettlementCard />
+                <ProfileSettings />
+                <SettlementCard />
               </div>
-              
+
               <div className="lg:col-span-8 space-y-6">
                 <div className="flex items-center justify-between">
-                   <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Business Overview</h2>
-                   <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>
-                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Live Sync</span>
-                   </div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Business Overview</h2>
+                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>
+                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Live Sync</span>
+                  </div>
                 </div>
                 <Summary /> {/* Move Summary here so it's prominent */}
                 <div className="glass-card rounded-[2.5rem] p-8">

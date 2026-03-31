@@ -14,12 +14,12 @@ export async function POST(req: Request) {
 
     // 2. Verify the Signature
     const hash = crypto
-      .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY!)
+      .createHmac("sha512", process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!)
       .update(rawBody)
       .digest("hex");
 
     if (hash !== paystackSignature) {
-      console.error("❌ Invalid Paystack Signature");
+      console.error("Invalid Paystack Signature");
       return new NextResponse("Invalid Signature", { status: 401 });
     }
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const body = JSON.parse(rawBody);
     const event = body.event;
 
-    console.log("✅ Webhook Received:", event);
+    console.log("Webhook Received:", event);
 
     // 4. Handle successful payment
     if (event === "charge.success") {
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
         ]);
 
         if (txError) {
-          console.error("❌ Database Insert Error:", txError);
+          console.error("Database Insert Error:", txError);
           return new NextResponse("DB Error", { status: 500 });
         }
       }
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
     return new NextResponse("Webhook Processed", { status: 200 });
   } catch (error: any) {
-    console.error("⚠️ Webhook Handler Crash:", error.message);
+    console.error(" Webhook Handler Crash:", error.message);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
