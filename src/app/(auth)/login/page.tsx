@@ -65,7 +65,7 @@ export default function AuthPage() {
         
         // 3. Get the fresh name from the store for the toast
         const freshProfile = useTransactionStore.getState().profile;
-        toast.success(`Welcome back, ${freshProfile.businessName || 'Merchant'}`);
+        // toast.success(`Welcome back, ${freshProfile.businessName || 'Merchant'}`);
         
         router.push("/");
       } else {
