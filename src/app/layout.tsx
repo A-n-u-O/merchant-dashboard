@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+<script src="https://js.paystack.co/v1/inline.js" async></script>
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

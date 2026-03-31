@@ -1,48 +1,59 @@
 "use client";
 
 import { useTransactionStore } from "@/store/useTransactionStore";
-import { Copy, CheckCircle2, CreditCard, Landmark } from "lucide-react";
+import { Copy, CheckCircle2, Landmark, Wallet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export const SettlementCard = () => {
-  const { profile, updateProfile } = useTransactionStore();
+  const { profile, user, fetchTransactions } = useTransactionStore();
   const [isCopying, setIsCopying] = useState(false);
 
-  const initializePayment = async (amount: number) => {
-  const user = useTransactionStore.getState().user;
+  const handlePayment = () => {
+    // 1. Safety Check: Ensure user and Paystack script exist
+    if (!user || !user.email) {
+      toast.error("User session not found. Please log in again.");
+      return;
+    }
 
-  // This opens the Paystack Checkout
-  const handler = (window as any).PaystackPop.setup({
-    key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY, // Use your Public Key here
-    email: user.email,
-    amount: amount * 100, // Amount in Kobo
-    currency: "NGN",
-    metadata: {
-      user_id: user.id, // This is crucial for the Webhook to find the user!
-    },
-    callback: (response: any) => {
-      toast.success("Payment successful! Ledger updating...");
-      // The Webhook handles the DB update, but we refresh the UI here
-      useTransactionStore.getState().fetchTransactions();
-    },
-  });
+    if (!(window as any).PaystackPop) {
+      toast.error("Payment gateway loading... please try again in a second.");
+      return;
+    }
 
-  handler.openIframe();
-};
+    // 2. Initialize Paystack Popup
+    const handler = (window as any).PaystackPop.setup({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY, // Ensure this is in your .env
+      email: user.email,
+      amount: 5000 * 100, // ₦5,000 in Kobo
+      currency: "NGN",
+      metadata: {
+        user_id: user.id, // This links the payment to this specific merchant in the webhook
+      },
+      onClose: () => toast.info("Payment cancelled"),
+      callback: (response: any) => {
+        toast.success("Transaction Authorised! Your ledger will sync in a moment.");
+        // We manually trigger a fetch to see if the webhook already finished
+        setTimeout(() => fetchTransactions(), 3000);
+      },
+    });
+
+    handler.openIframe();
+  };
 
   const copyToClipboard = () => {
     if (!profile.merchantId) return;
-    navigator.clipboard.writeText(profile.merchantId.replace("MID-", "81")); // Mock account
+    const cleanId = profile.merchantId.replace("MID-", "81");
+    navigator.clipboard.writeText(cleanId);
     setIsCopying(true);
     toast.success("Account Number Copied");
     setTimeout(() => setIsCopying(false), 2000);
   };
 
   return (
-    <div className="relative group perspective-1000">
-      {/* The Card Face */}
-      <div className="relative bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl overflow-hidden border border-white/10 transition-all duration-500 hover:rotate-x-2">
+    <div className="relative group perspective-1000 space-y-4">
+      {/* The Visual Card */}
+      <div className="relative bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl overflow-hidden border border-white/10 transition-all duration-500 hover:rotate-x-2">
         {/* Animated Background Mesh */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[80px] rounded-full -mr-20 -mt-20 animate-pulse" />
         
@@ -61,7 +72,7 @@ export const SettlementCard = () => {
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Virtual Settlement ID</p>
             <div className="flex items-center gap-3">
               <h3 className="text-2xl font-mono font-bold tracking-widest">
-                {profile.merchantId ? profile.merchantId.replace("MID-", "81 ") : "GENERATE ID"}
+                {profile.merchantId ? profile.merchantId.replace("MID-", "81 ") : "8100 0000 00"}
               </h3>
               <button onClick={copyToClipboard} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
                 {isCopying ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-400" />}
@@ -81,6 +92,15 @@ export const SettlementCard = () => {
           </div>
         </div>
       </div>
+
+      {/* The "Action" Button sits below the card for better UX */}
+      <button 
+        onClick={handlePayment}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-95 group"
+      >
+        <Wallet className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+        Fund Account via Paystack
+      </button>
     </div>
   );
 };
