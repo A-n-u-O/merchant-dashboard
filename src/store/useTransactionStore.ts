@@ -18,6 +18,12 @@ export interface Transaction {
   date: string;
 }
 
+interface MerchantProfile {
+  businessName: string;
+  merchantId: string;
+  tier: "Level 1" | "Level 2" | "Kyc Verified";
+} 
+
 interface TransactionStore {
   transactions: Transaction[];
   isProcessing: boolean;
@@ -33,6 +39,10 @@ interface TransactionStore {
   resetFilters: () => void;
   selectedTransaction: Transaction | null;
   setSelectedTransaction: (transaction: Transaction | null) => void;
+  profile: MerchantProfile;
+  updateProfile: (data: Partial<MerchantProfile>) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 const armoredStorage: StateStorage = {
@@ -80,10 +90,25 @@ export const useTransactionStore = create<TransactionStore>()(
         type: "all",
       },
 
+      profile: {
+        businessName: "Merchant Portal",
+        merchantId: "MID-8829340",
+        tier: "Level 2",
+      },
+
+      updateProfile: (data) => 
+        set((state) => ({
+          profile: { ...state.profile, ...data }
+        })),
+
+        searchQuery: "",
+      setSearchQuery: (query) => set({ searchQuery: query }),
+
       selectedTransaction: null,
   setSelectedTransaction: (tx) => set({ selectedTransaction: tx }),
       addTransaction: async (data) => {
         const reference = `MNP-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
+        
         const newTransaction: Transaction = {
           ...data,
           id: crypto.randomUUID(),
@@ -92,33 +117,45 @@ export const useTransactionStore = create<TransactionStore>()(
           status: "pending",
         };
 
+        // 1. Instantly update the UI to "Pending"
         set((state) => ({
           transactions: [newTransaction, ...state.transactions],
           isProcessing: true,
         }));
 
-        try {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          if (Math.random() < 0.1) throw new Error("Gateway Timeout");
+        // 2. Wrap the settlement simulation in a Promise for the Toast
+        const settlementPromise = new Promise(async (resolve, reject) => {
+          try {
+            await new Promise((res) => setTimeout(res, 2000)); // Bank Latency
+            
+            const isSuccess = Math.random() > 0.1; // 90% Success rate
+            
+            if (!isSuccess) throw new Error("Gateway Timeout");
 
-          set((state) => ({
-            transactions: state.transactions.map((tx) =>
-              tx.reference === reference ? { ...tx, status: "success" } : tx
-            ),
-            isProcessing: false,
-          }));
+            set((state) => ({
+              transactions: state.transactions.map((tx) =>
+                tx.reference === reference ? { ...tx, status: "success" } : tx
+              ),
+              isProcessing: false,
+            }));
+            resolve(reference);
+          } catch (error) {
+            set((state) => ({
+              transactions: state.transactions.map((tx) =>
+                tx.reference === reference ? { ...tx, status: "failed" } : tx
+              ),
+              isProcessing: false,
+            }));
+            reject(error);
+          }
+        });
 
-          toast.success("Settlement Successful", { description: reference });
-        } catch (error: any) {
-          set((state) => ({
-            transactions: state.transactions.map((tx) =>
-              tx.reference === reference ? { ...tx, status: "failed" } : tx
-            ),
-            isProcessing: false,
-          }));
-
-          toast.error("Settlement Failed", { description: error.message });
-        }
+        // 3. Trigger the Interactive Toast
+        toast.promise(settlementPromise, {
+          loading: "Reaching Gateway...",
+          success: (ref) => `Settlement ${ref} Finalized`,
+          error: (err) => `Failed: ${err.message}`,
+        });
       },
 
       deleteTransaction: (id) =>
@@ -137,6 +174,7 @@ export const useTransactionStore = create<TransactionStore>()(
           filters: { status: "all", type: "all" },
         }),
     }),
+    
     {
       name: "moniepoint-merchant-ledger",
       storage: createJSONStorage(() => armoredStorage),

@@ -1,13 +1,20 @@
 "use client";
 
 import { useTransactionStore } from "@/store/useTransactionStore";
-import { Pie } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, Colors } from "chart.js";
-import { PieChart, Loader2 } from "lucide-react";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { BarChart3, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { TooltipItem } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend, Colors);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export const Chart = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -25,22 +32,35 @@ export const Chart = () => {
     );
   }
 
-  const debits = transactions.filter((tx) => tx.type === "debit" && tx.status === "success");
+  // Grouping logic for "Inflow vs Outflow" per Category
+  const categories = Array.from(new Set(transactions.map((tx) => tx.category)));
+  
+  const inflowData = categories.map((cat) =>
+    transactions
+      .filter((tx) => tx.category === cat && tx.type === "credit" && tx.status === "success")
+      .reduce((sum, tx) => sum + tx.amount, 0)
+  );
 
-  const categoryTotals: Record<string, number> = {};
-  debits.forEach((tx) => {
-    categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
-  });
+  const outflowData = categories.map((cat) =>
+    transactions
+      .filter((tx) => tx.category === cat && tx.type === "debit" && tx.status === "success")
+      .reduce((sum, tx) => sum + tx.amount, 0)
+  );
 
-  const chartData = {
-    labels: Object.keys(categoryTotals),
+  const data = {
+    labels: categories,
     datasets: [
       {
-        data: Object.values(categoryTotals),
-        backgroundColor: ["#2563eb", "#059669", "#d97706", "#dc2626", "#7c3aed"],
-        borderColor: "#ffffff",
-        borderWidth: 2,
-        hoverBorderWidth: 4,
+        label: "Inflow (₦)",
+        data: inflowData,
+        backgroundColor: "#059669", // Emerald 600
+        borderRadius: 6,
+      },
+      {
+        label: "Outflow (₦)",
+        data: outflowData,
+        backgroundColor: "#2563eb", // Blue 600
+        borderRadius: 6,
       },
     ],
   };
@@ -50,27 +70,29 @@ export const Chart = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'right' as const,
-        labels: { padding: 20, usePointStyle: true, color: '#6b7280', font: { size: 11, family: 'system-ui', weight: 600 } },
+        position: "top" as const,
+        labels: { font: { weight: 700 as any }, usePointStyle: true },
       },
       tooltip: {
-        backgroundColor: 'rgba(17, 24, 39, 0.95)', titleColor: '#fff', bodyColor: '#e5e7eb', borderColor: '#374151', borderWidth: 1, padding: 12,
-        callbacks: { label: function(c: TooltipItem<'pie'>) { return ` ${c.label}: ₦${c.parsed.toLocaleString(undefined, { minimumFractionDigits: 2 })}`; } }
+        callbacks: {
+          label: (context: any) => ` ₦${context.raw.toLocaleString()}`,
+        },
       },
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { display: false } },
+      x: { grid: { display: false } },
     },
   };
 
   return (
     <div className="w-full">
-      {debits.length > 0 ? (
-        <div className="h-[300px] relative"><Pie data={chartData} options={options} /></div>
+      {transactions.length > 0 ? (
+        <div className="h-[300px]"><Bar data={data} options={options} /></div>
       ) : (
         <div className="h-[300px] flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-            <PieChart className="w-8 h-8 text-gray-300" />
-          </div>
-          <p className="text-gray-900 font-bold">No outflow data</p>
-          <p className="text-xs text-gray-500 mt-1 max-w-[200px]">Initiate a successful debit settlement to see your breakdown.</p>
+          <BarChart3 className="w-12 h-12 text-gray-200 mb-2" />
+          <p className="text-gray-500 font-medium">No transaction data available for analysis</p>
         </div>
       )}
     </div>

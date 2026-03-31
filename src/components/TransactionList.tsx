@@ -2,7 +2,6 @@
 
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { Trash2, Hash, CheckCircle2, Clock, AlertCircle, Inbox } from "lucide-react";
-import { ExportButton } from "./ExportButton";
 
 const StatusBadge = ({ status }: { status: 'pending' | 'success' | 'failed' }) => {
   const styles = {
@@ -23,17 +22,30 @@ const StatusBadge = ({ status }: { status: 'pending' | 'success' | 'failed' }) =
 };
 
 export const TransactionList = () => {
-  // 1. Pull transactions, delete action, AND filters from the store
-  const { transactions, deleteTransaction, filters, setSelectedTransaction } = useTransactionStore();
+  // 1. Pull transactions, delete action, filters, AND searchQuery from the store
+  const { 
+    transactions, 
+    deleteTransaction, 
+    filters, 
+    setSelectedTransaction,
+    searchQuery // Added this
+  } = useTransactionStore();
 
-  // 2. DERIVED STATE: Filter the transactions based on current store filters
+  // 2. DERIVED STATE: Filter by Status, Type, AND Search Query
   const filteredTransactions = transactions.filter((tx) => {
     const statusMatch = filters.status === "all" || tx.status === filters.status;
     const typeMatch = filters.type === "all" || tx.type === filters.type;
-    return statusMatch && typeMatch;
+    
+    const searchLower = searchQuery.toLowerCase();
+    const searchMatch = 
+      tx.reference.toLowerCase().includes(searchLower) ||
+      tx.category.toLowerCase().includes(searchLower) ||
+      tx.description.toLowerCase().includes(searchLower);
+
+    return statusMatch && typeMatch && searchMatch;
   });
 
-  // Handle empty state (no transactions at all)
+  // Handle empty state (no transactions at all in the database)
   if (transactions.length === 0) {
     return (
       <div className="bg-white p-12 rounded-3xl border border-gray-100 text-center shadow-sm">
@@ -51,16 +63,16 @@ export const TransactionList = () => {
       <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
         <h2 className="text-lg font-bold text-gray-900">Settlement History</h2>
         <div className="flex items-center gap-2">
-          {/* Show count of filtered vs total if a filter is active */}
-          {(filters.status !== "all" || filters.type !== "all") && (
-            <span className="text-[10px] font-bold text-gray-400 uppercase">Filtered</span>
+          {/* Show "Filtered" badge if any status, type, or search filter is active */}
+          {(filters.status !== "all" || filters.type !== "all" || searchQuery !== "") && (
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm">
+              Filtered
+            </span>
           )}
           <span className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-md uppercase tracking-tight">
             {filteredTransactions.length} Entries
           </span>
         </div>
-        <ExportButton />
-
       </div>
 
       <div className="overflow-x-auto">
@@ -75,10 +87,13 @@ export const TransactionList = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {/* 3. Map over filteredTransactions instead of raw transactions */}
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((tx) => (
-                <tr key={tx.id} onClick={() => setSelectedTransaction(tx)} className="hover:bg-gray-50/50 transition-colors">
+                <tr 
+                  key={tx.id} 
+                  onClick={() => setSelectedTransaction(tx)} 
+                  className="hover:bg-gray-50/50 transition-colors cursor-pointer group"
+                >
                   <td className="px-6 py-4">
                     <div className="text-sm font-bold text-gray-900">
                       {new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
@@ -98,22 +113,25 @@ export const TransactionList = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      deleteTransaction(tx.id)
-                    }} className="p-2 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTransaction(tx.id);
+                      }} 
+                      className="p-2 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
               ))
             ) : (
-              // Empty state specifically for when filters return nothing
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
+                <td colSpan={5} className="px-6 py-20 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-400">
-                    <Inbox className="w-8 h-8 mb-2 opacity-20" />
-                    <p className="text-sm font-medium">No transactions match these filters</p>
+                    <Inbox className="w-10 h-10 mb-3 opacity-20" />
+                    <p className="text-sm font-bold text-gray-900">No matches found</p>
+                    <p className="text-xs text-gray-500 mt-1">Try adjusting your filters or search terms</p>
                   </div>
                 </td>
               </tr>
@@ -121,6 +139,6 @@ export const TransactionList = () => {
           </tbody>
         </table>
       </div>
-    </div >
+    </div>
   );
 };
