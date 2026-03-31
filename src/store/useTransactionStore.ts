@@ -21,14 +21,20 @@ export interface Transaction {
 interface TransactionStore {
   transactions: Transaction[];
   isProcessing: boolean;
+  // Day 2: Filter State Types
+  filters: {
+    status: TransactionStatus | "all";
+    type: TransactionType | "all";
+  };
   addTransaction: (data: Omit<Transaction, "id" | "reference" | "status" | "date">) => Promise<void>;
   deleteTransaction: (id: string) => void;
+  // Filter Actions
+  setFilter: (filterType: "status" | "type", value: string) => void;
+  resetFilters: () => void;
+  selectedTransaction: Transaction | null;
+  setSelectedTransaction: (transaction: Transaction | null) => void;
 }
 
-// THE NODE 22 ARMOR:
-// 1. We use try/catch to catch Node's proxy traps.
-// 2. We split 'local' + 'Storage' so Node's static analyzer can't read the word and trigger the warning.
-// 3. We strictly verify window exists AND that getItem is an actual function.
 const armoredStorage: StateStorage = {
   getItem: (name) => {
     try {
@@ -68,7 +74,14 @@ export const useTransactionStore = create<TransactionStore>()(
     (set) => ({
       transactions: [],
       isProcessing: false,
+      //Initial Filter State
+      filters: {
+        status: "all",
+        type: "all",
+      },
 
+      selectedTransaction: null,
+  setSelectedTransaction: (tx) => set({ selectedTransaction: tx }),
       addTransaction: async (data) => {
         const reference = `MNP-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
         const newTransaction: Transaction = {
@@ -112,6 +125,17 @@ export const useTransactionStore = create<TransactionStore>()(
         set((state) => ({
           transactions: state.transactions.filter((tx) => tx.id !== id),
         })),
+
+      // Day 2: Filter Logic
+      setFilter: (filterType, value) =>
+        set((state) => ({
+          filters: { ...state.filters, [filterType]: value },
+        })),
+
+      resetFilters: () =>
+        set({
+          filters: { status: "all", type: "all" },
+        }),
     }),
     {
       name: "moniepoint-merchant-ledger",

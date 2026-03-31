@@ -6,6 +6,9 @@ import { TrendingDown, TrendingUp, Wallet, Clock } from "lucide-react";
 export const Summary = () => {
   const transactions = useTransactionStore((state) => state.transactions);
 
+  const totalVolume = transactions.length;
+  const successfulVolume = transactions.filter(tx => tx.status === 'success').length;
+  const successRate = totalVolume > 0 ? Math.round((successfulVolume / totalVolume) * 100) : 0;
   const totalCredits = transactions.filter((tx) => tx.type === "credit" && tx.status === "success").reduce((acc, tx) => acc + tx.amount, 0);
   const totalDebits = transactions.filter((tx) => tx.type === "debit" && tx.status === "success").reduce((acc, tx) => acc + tx.amount, 0);
   const pendingVolume = transactions.filter((tx) => tx.status === "pending").reduce((acc, tx) => acc + tx.amount, 0);
@@ -47,13 +50,27 @@ export const Summary = () => {
         <div className="mt-2 p-6 bg-blue-600 rounded-2xl shadow-blue-600/30 shadow-xl text-white">
           <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Available Balance</p>
           <p className="text-4xl font-black mb-5">₦{netSettlement.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-          
+
           <div className="flex items-center gap-2 pt-4 border-t border-white/20">
             <Clock className="w-4 h-4 opacity-80" />
             <p className="text-xs font-medium">
-              <span className="opacity-80">Pending Volume:</span> 
+              <span className="opacity-80">Pending Volume:</span>
               <span className="ml-1 font-bold italic text-blue-100">₦{pendingVolume.toLocaleString()}</span>
             </p>
+          </div>
+
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Processing Health</span>
+            <span className="text-sm font-black text-blue-600">{successRate}%</span>
+          </div>
+          <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+            <div
+              className="bg-blue-600 h-full transition-all duration-500"
+              style={{ width: `${successRate}%` }}
+            />
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { Summary } from "@/components/Summary";
 import { TransactionList } from "@/components/TransactionList";
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { LayoutDashboard, ReceiptText, ShieldCheck, Loader2 } from "lucide-react";
+import { ReceiptModal } from "@/components/ReceiptModal";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -57,6 +58,7 @@ export default function Home() {
               <Chart />
             </div>
             <TransactionList />
+            <ReceiptModal/>
           </div>
         </div>
       </div>
