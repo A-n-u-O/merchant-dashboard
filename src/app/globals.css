@@ -1,47 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #f8fafd;
+  --foreground: #0f172a;
+  --accent: #6366f1;           /* Soft Indigo */
+  --accent-light: #a5b4fc;
+  --glow: rgba(99, 102, 241, 0.15);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0a0a0f;
+    --foreground: #e2e8f0;
+    --accent: #818cf8;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-@layer components {
-  .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
-  }
+/* Dreamy Background */
+.premium-gradient {
+  background: radial-gradient(at 30% 20%, rgba(165, 180, 252, 0.25) 0%, transparent 50%),
+              radial-gradient(at 70% 80%, rgba(129, 140, 248, 0.20) 0%, transparent 60%),
+              linear-gradient(135deg, #f8fafd 0%, #e0e7ff 100%);
+}
 
-  .premium-gradient {
-    background: radial-gradient(circle at top left, #f8fafc, #eff6ff);
-  }
-  input {
-    color: #0f172a !important; /* Deep Navy/Black */
-    caret-color: #2563eb; /* Blue Cursor */
-  }
+.dark .premium-gradient {
+  background: radial-gradient(at 30% 20%, rgba(129, 140, 248, 0.15) 0%, transparent 50%),
+              radial-gradient(at 70% 80%, rgba(165, 180, 252, 0.12) 0%, transparent 60%),
+              linear-gradient(135deg, #0a0a0f 0%, #1e1b4b 100%);
+}
 
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #0f172a;
-    transition: background-color 5000s ease-in-out 0s;
-  }
+/* Enhanced Glass Card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15),
+              inset 0 2px 0 0 rgba(255,255,255,0.8);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+/* Floating Orb Glows */
+.orb {
+  animation: float 25s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(30px, -40px) rotate(8deg); }
 }

@@ -43,8 +43,8 @@ export default function Home() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center premium-gradient text-blue-600 font-mono">
         <div className="relative">
-            <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full animate-pulse"></div>
-            <Loader2 className="animate-spin w-10 h-10 mb-4 relative" />
+          <div className="absolute -inset-4 bg-blue-500/20 blur-xl rounded-full animate-pulse"></div>
+          <Loader2 className="animate-spin w-10 h-10 mb-4 relative" />
         </div>
         <p className="tracking-[0.3em] font-black text-xs uppercase mt-4">Authenticating Ledger</p>
       </div>
@@ -61,21 +61,21 @@ export default function Home() {
               {profile.businessName.split(' ')[1] || 'Portal'}
             </span>
           </div>
-          
+
           <div className="flex items-center gap-8">
             <div className="hidden md:flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                <div className="flex items-center gap-2 text-blue-600 border-b-2 border-blue-600 pb-1">
+              <div className="flex items-center gap-2 text-blue-600 border-b-2 border-blue-600 pb-1">
                 <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
-                </div>
-                <div className="flex items-center gap-2 cursor-pointer hover:text-gray-900 transition-colors">
+              </div>
+              <div className="flex items-center gap-2 cursor-pointer hover:text-gray-900 transition-colors">
                 <ReceiptText className="h-3.5 w-3.5" /> Settlements
-                </div>
+              </div>
             </div>
-            <button 
-                onClick={() => signOut()}
-                className="p-2 hover:bg-rose-50 text-gray-400 hover:text-rose-600 rounded-full transition-all"
+            <button
+              onClick={() => signOut()}
+              className="p-2 hover:bg-rose-50 text-gray-400 hover:text-rose-600 rounded-full transition-all"
             >
-                <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -93,26 +93,26 @@ export default function Home() {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           <div className="xl:col-span-4 space-y-8 bg-slate-50/50 p-6 rounded-[2.5rem] border border-white">
-   <ProfileSettings />
-   <Summary />
-   <AddTransactionForm />
-</div>
+            <ProfileSettings />
+            <Summary />
+            <AddTransactionForm />
+          </div>
 
           <div className="xl:col-span-8 space-y-8">
             <div className="glass-card rounded-[2.5rem] p-8 relative overflow-hidden">
               {/* Decorative background element to kill AI look */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full -mr-16 -mt-16"></div>
-              
+
               <div className="flex items-center justify-between mb-8 relative">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">Business Insights</h2>
                   <p className="text-xs text-gray-400 font-medium">Inflow vs Outflow Trends</p>
                 </div>
                 <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>
-                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
                     Live Sync
-                    </span>
+                  </span>
                 </div>
               </div>
               <Chart />
