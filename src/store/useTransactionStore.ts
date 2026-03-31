@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage, StateStorage } from "zustand/middleware";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase"; // Make sure you created this file!
+import { supabase } from "@/lib/supabase";
 
 export type TransactionStatus = "pending" | "success" | "failed";
 export type TransactionType = "credit" | "debit";
@@ -26,6 +26,12 @@ interface MerchantProfile {
 }
 
 interface TransactionStore {
+  // Authentication State
+  user: any | null;
+  setUser: (user: any) => void;
+  signOut: () => Promise<void>;
+
+  // Data State
   transactions: Transaction[];
   isProcessing: boolean;
   filters: {
@@ -37,6 +43,7 @@ interface TransactionStore {
   profile: MerchantProfile;
   
   // Cloud Actions
+  fetchProfile: () => Promise<void>;
   fetchTransactions: () => Promise<void>;
   addTransaction: (data: Omit<Transaction, "id" | "reference" | "status" | "date">) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -49,13 +56,11 @@ interface TransactionStore {
   setSearchQuery: (query: string) => void;
 }
 
-// THE ARMOR (For local profile persistence)
 const armoredStorage: StateStorage = {
   getItem: (name) => {
     try {
       if (typeof window !== "undefined") {
-        const ls = (window as any)["local" + "Storage"];
-        return ls?.getItem(name) || null;
+        return localStorage.getItem(name);
       }
     } catch (e) {}
     return null;
@@ -63,16 +68,14 @@ const armoredStorage: StateStorage = {
   setItem: (name, value) => {
     try {
       if (typeof window !== "undefined") {
-        const ls = (window as any)["local" + "Storage"];
-        ls?.setItem(name, value);
+        localStorage.setItem(name, value);
       }
     } catch (e) {}
   },
   removeItem: (name) => {
     try {
       if (typeof window !== "undefined") {
-        const ls = (window as any)["local" + "Storage"];
-        ls?.removeItem(name);
+        localStorage.removeItem(name);
       }
     } catch (e) {}
   },
@@ -81,6 +84,16 @@ const armoredStorage: StateStorage = {
 export const useTransactionStore = create<TransactionStore>()(
   persist(
     (set, get) => ({
+      // --- AUTH INITIAL STATE ---
+      user: null,
+      setUser: (user) => set({ user }),
+      signOut: async () => {
+        await supabase.auth.signOut();
+        set({ user: null, transactions: [], profile: { businessName: "Merchant Portal", merchantId: "N/A", tier: "Level 1" } });
+        window.location.href = "/login";
+      },
+
+      // --- DATA INITIAL STATE ---
       transactions: [],
       isProcessing: false,
       filters: { status: "all", type: "all" },
@@ -88,11 +101,33 @@ export const useTransactionStore = create<TransactionStore>()(
       selectedTransaction: null,
       profile: {
         businessName: "Merchant Portal",
-        merchantId: "MID-8829340",
-        tier: "Level 2",
+        merchantId: "MID-XXXXXX",
+        tier: "Level 1",
       },
 
-      // 1. CLOUD FETCH: Pull data from Supabase
+      // --- CLOUD ACTIONS ---
+
+      fetchProfile: async () => {
+        const user = get().user;
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('business_name, merchant_id, tier')
+          .eq('id', user.id)
+          .single();
+
+        if (data && !error) {
+          set({
+            profile: {
+              businessName: data.business_name,
+              merchantId: data.merchant_id,
+              tier: data.tier,
+            }
+          });
+        }
+      },
+
       fetchTransactions: async () => {
         const { data, error } = await supabase
           .from("transactions")
@@ -100,53 +135,40 @@ export const useTransactionStore = create<TransactionStore>()(
           .order("created_at", { ascending: false });
 
         if (error) {
-          toast.error("Cloud Sync Failed", { description: error.message });
+          toast.error("Sync Failed", { description: error.message });
         } else {
-          // Map DB columns to our Interface if necessary
-          const mapped = data.map((tx: any) => ({
-            ...tx,
-            date: tx.created_at, // Mapping Postgres column to our frontend name
-          }));
-          set({ transactions: mapped });
+          set({ 
+            transactions: data.map((tx: any) => ({ ...tx, date: tx.created_at })) 
+          });
         }
       },
 
-      // 2. CLOUD INSERT: Optimistic Update + DB Sync
       addTransaction: async (data) => {
         const reference = `MNP-${Math.random().toString(36).toUpperCase().substring(2, 10)}`;
         const tempId = crypto.randomUUID();
-        
-        const newTransaction: Transaction = {
-          ...data,
-          id: tempId,
-          reference,
-          date: new Date().toISOString(),
-          status: "pending",
-        };
+        const user = get().user;
 
-        // OPTIMISTIC UPDATE: UI feels instant
-        set((state) => ({
-          transactions: [newTransaction, ...state.transactions],
-          isProcessing: true,
-        }));
+        if (!user) {
+          toast.error("Authentication required");
+          return;
+        }
+
+        const newTx: Transaction = { ...data, id: tempId, reference, date: new Date().toISOString(), status: "pending" };
+        set((state) => ({ transactions: [newTx, ...state.transactions], isProcessing: true }));
 
         const settlementPromise = new Promise(async (resolve, reject) => {
           try {
-            // Real Supabase Insert
             const { error } = await supabase.from("transactions").insert([
               {
-                amount: data.amount,
-                type: data.type,
-                category: data.category,
-                description: data.description,
-                reference: reference,
+                ...data,
+                reference,
+                user_id: user.id,
                 status: "success",
               },
             ]);
 
             if (error) throw error;
 
-            // Update local state to success
             set((state) => ({
               transactions: state.transactions.map((tx) =>
                 tx.id === tempId ? { ...tx, status: "success" } : tx
@@ -155,7 +177,6 @@ export const useTransactionStore = create<TransactionStore>()(
             }));
             resolve(reference);
           } catch (error: any) {
-            // Rollback or show failure
             set((state) => ({
               transactions: state.transactions.map((tx) =>
                 tx.id === tempId ? { ...tx, status: "failed" } : tx
@@ -166,40 +187,38 @@ export const useTransactionStore = create<TransactionStore>()(
           }
         });
 
+        // We don't "return" the toast.promise, we just call it.
         toast.promise(settlementPromise, {
-          loading: "Authorizing with Gateway...",
-          success: (ref) => `Settlement ${ref} Confirmed`,
-          error: (err) => `Gateway Error: ${err.message}`,
+          loading: "Authorizing Settlement...",
+          success: (ref) => `Settlement ${ref} Finalized`,
+          error: (err) => `Failed: ${err.message}`,
         });
       },
 
-      // 3. CLOUD DELETE: Remove from DB
       deleteTransaction: async (id) => {
         const { error } = await supabase.from("transactions").delete().eq("id", id);
-
+        
         if (error) {
-          toast.error("Delete Failed", { description: error.message });
-        } else {
-          set((state) => ({
-            transactions: state.transactions.filter((tx) => tx.id !== id),
-          }));
-          toast.success("Record Purged");
+          toast.error("Delete Failed");
+          return;
         }
+
+        set((state) => ({ transactions: state.transactions.filter((tx) => tx.id !== id) }));
+        toast.success("Transaction Purged");
       },
 
-      // UI ACTIONS
-      setFilter: (filterType, value) =>
-        set((state) => ({ filters: { ...state.filters, [filterType]: value } })),
+      // --- UI ACTIONS ---
+      setFilter: (filterType, value) => set((state) => ({ filters: { ...state.filters, [filterType]: value as any } })),
       resetFilters: () => set({ filters: { status: "all", type: "all" } }),
       setSelectedTransaction: (tx) => set({ selectedTransaction: tx }),
       setSearchQuery: (query) => set({ searchQuery: query }),
       updateProfile: (data) => set((state) => ({ profile: { ...state.profile, ...data } })),
     }),
     {
-      name: "moniepoint-merchant-ledger",
+      name: "moniepoint-auth-store",
       storage: createJSONStorage(() => armoredStorage),
-      // Only persist the profile locally, fetch transactions from cloud
-      partialize: (state) => ({ profile: state.profile }),
+      partialize: (state) => ({ profile: state.profile, user: state.user }),
+      skipHydration: true,
     }
   )
 );

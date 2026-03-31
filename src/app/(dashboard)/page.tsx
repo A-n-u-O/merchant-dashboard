@@ -10,22 +10,33 @@ import { LayoutDashboard, ReceiptText, Loader2 } from "lucide-react";
 import { ReceiptModal } from "@/components/ReceiptModal";
 import { CommandBar } from "@/components/CommandBar";
 import { ProfileSettings } from "@/components/ProfileSettings";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
-  
-  // Pull profile and the cloud-fetch action from the store
-  const { profile, fetchTransactions } = useTransactionStore();
+
+  const { user, fetchTransactions, fetchProfile } = useTransactionStore();
+  const router = useRouter();
 
   useEffect(() => {
-    // 1. Rehydrate local profile (Merchant Name, Tier)
-    useTransactionStore.persist.rehydrate();
-    
-    // 2. Fetch all transaction records from Supabase PostgreSQL
-    fetchTransactions();
-    
-    setIsClient(true);
-  }, [fetchTransactions]);
+    const checkUser = async () => {
+      // 1. Check if we have a user in the store
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      // 2. If logged in, sync all cloud data
+      await Promise.all([
+        fetchProfile(),
+        fetchTransactions()
+      ]);
+
+      setIsClient(true);
+    };
+
+    checkUser();
+  }, [user]);
 
   if (!isClient) {
     return (
@@ -42,9 +53,9 @@ export default function Home() {
       <nav className="bg-white/70 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="font-black text-xl tracking-tight text-gray-900">
-            {profile.businessName.split(' ')[0]}
+            {user.businessName.split(' ')[0]}
             <span className="text-blue-600">
-              {profile.businessName.split(' ')[1] || 'Portal'}
+              {user.businessName.split(' ')[1] || 'Portal'}
             </span>
           </div>
           <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-gray-400">
@@ -64,7 +75,7 @@ export default function Home() {
             Merchant <span className="text-blue-600">Ledger</span>
           </h1>
           <p className="text-gray-500 mt-2 font-medium">
-            Cloud-synced financial monitoring for <span className="font-bold text-gray-700">{profile.businessName}</span>.
+            Cloud-synced financial monitoring for <span className="font-bold text-gray-700">{user.businessName}</span>.
           </p>
         </header>
 
