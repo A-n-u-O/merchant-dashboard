@@ -9,6 +9,28 @@ export const SettlementCard = () => {
   const { profile, updateProfile } = useTransactionStore();
   const [isCopying, setIsCopying] = useState(false);
 
+  const initializePayment = async (amount: number) => {
+  const user = useTransactionStore.getState().user;
+
+  // This opens the Paystack Checkout
+  const handler = (window as any).PaystackPop.setup({
+    key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY, // Use your Public Key here
+    email: user.email,
+    amount: amount * 100, // Amount in Kobo
+    currency: "NGN",
+    metadata: {
+      user_id: user.id, // This is crucial for the Webhook to find the user!
+    },
+    callback: (response: any) => {
+      toast.success("Payment successful! Ledger updating...");
+      // The Webhook handles the DB update, but we refresh the UI here
+      useTransactionStore.getState().fetchTransactions();
+    },
+  });
+
+  handler.openIframe();
+};
+
   const copyToClipboard = () => {
     if (!profile.merchantId) return;
     navigator.clipboard.writeText(profile.merchantId.replace("MID-", "81")); // Mock account
