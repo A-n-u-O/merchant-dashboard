@@ -119,7 +119,7 @@ export const SettlementCard = () => {
       {/* The "Action" Button sits below the card for better UX */}
       <button 
         onClick={handlePayment}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-95 group"
+        className="relative z-[100] w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-95 group"
       >
         <Wallet className="w-4 h-4 group-hover:rotate-12 transition-transform" />
         Fund Account via Paystack
