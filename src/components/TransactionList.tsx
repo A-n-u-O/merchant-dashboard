@@ -2,6 +2,7 @@
 
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { Trash2, Hash, CheckCircle2, Clock, AlertCircle, Inbox } from "lucide-react";
+import { ExportButton } from "./ExportButton";
 
 const StatusBadge = ({ status }: { status: 'pending' | 'success' | 'failed' }) => {
   const styles = {
@@ -58,6 +59,8 @@ export const TransactionList = () => {
             {filteredTransactions.length} Entries
           </span>
         </div>
+        <ExportButton />
+
       </div>
 
       <div className="overflow-x-auto">
