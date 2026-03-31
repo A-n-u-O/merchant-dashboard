@@ -1,47 +1,33 @@
-# 💸 Expense Tracker Dashboard
+# 🏦 Apex Merchant Ledger (Full-Stack)
+**An Enterprise-Grade Settlement Dashboard with Real-Time Data Persistence.**
 
-A responsive and modern expense tracker web app built with **Next.js**, **Zustand**, **Tailwind CSS**, and **Chart.js**. Easily track your income and expenses, view summaries, and visualize spending categories with interactive charts.
-
----
-
-## 🚀 Features
-
-- ✅ Add income and expense transactions
-- 🧮 Real-time summary: income, expense, and balance
-- 📋 Transaction list with delete option
-- 📊 Pie chart showing expense breakdown by category
-- 💾 State management using Zustand
-- 💡 Clean and responsive UI using Tailwind CSS
-- 🔒 Built with Next.js App Router
+> **Note:** This project has been evolved from a client-side prototype to a full-stack financial tool.
 
 ---
 
-## 🖼️ Demo
+## 💎 Design Philosophy
+Built with a focus on **High-Fidelity UX**, moving away from standard utility layouts to a custom-depth interface.
+- **Glassmorphism UI:** Utilizing backdrop blurs and custom elevation for a modern "Apple-esque" feel.
+- **Fluid Motion:** Powered by `Framer Motion` for layout transitions and micro-interactions.
+- **Dynamic Type-Scale:** Professional typography focusing on financial readability.
 
-> **Live Preview:** [https://expense-tracker-dashboard-brown.vercel.app/](#)
+## 🏗️ Backend Architecture
+Transitioned from mock-latency to a **PostgreSQL-backed infrastructure**.
+- **Data Persistence:** Integrated **Supabase/Prisma** for permanent ledger storage.
+- **Server-Side Integrity:** Validation shifted from the client to **Next.js Server Actions** for enhanced security.
+- **Relational Mapping:** Transactions are now tied to a `User` entity, allowing for multi-merchant account management.
 
+## 🚀 Advanced Tech Stack
+- **Frontend:** Next.js 15, Tailwind CSS, Framer Motion
+- **State:** Zustand (Synchronized with DB via TanStack Query)
+- **Backend:** Supabase (PostgreSQL) / Prisma
+- **Security:** Zod-validated Server Actions
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Installation (Full-Stack)
 
-- **Framework:** [Next.js 14 (App Router)](https://nextjs.org/)
-- **State Management:** [Zustand](https://github.com/pmndrs/zustand)
-- **Charts:** [Chart.js](https://www.chartjs.org/) with [react-chartjs-2](https://github.com/reactchartjs/react-chartjs-2)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Language:** TypeScript
-
----
-
-## 📦 Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/A-n-u-O/Expense-Tracker-Dashboard.git
-cd expense-tracker-dashboard
-
-# Install dependencies
-npm install
-
-# Run locally
-npm run dev
+1. **Clone & Install:**
+   ```bash
+   git clone [https://github.com/A-n-u-O/merchant-dashboard.git](https://github.com/A-n-u-O/merchant-dashboard.git)
+   npm install
