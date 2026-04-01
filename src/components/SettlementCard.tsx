@@ -11,60 +11,62 @@ export const SettlementCard = () => {
   const [isCopying, setIsCopying] = useState(false);
 
   const handlePayment = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
-    
-    if (!(window as any).PaystackPop) {
-      toast.error("Payment system initializing... Please wait.");
-      return;
-    }
+  e.preventDefault();
+  e.stopPropagation();
 
-    const handler = (window as any).PaystackPop.setup({
-      key: publicKey,
-      email: user?.email || "test@merchant.com",
-      amount: 5000 * 100,
-      currency: "NGN",
-      metadata: { user_id: user?.id },
+  if (!(window as any).PaystackPop) {
+    toast.error("Paystack is still loading...");
+    return;
+  }
+
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+
+  const handler = (window as any).PaystackPop.setup({
+    key: publicKey,
+    email: user?.email || "test@merchant.com",
+    amount: 5000 * 100,
+    currency: "NGN",
+    metadata: {
+      user_id: user?.id,
+    },
+    // ✅FIXED: Using standard function syntax to avoid the "Not a function" error
+    callback: function(response: any) {
+      const ref = response.reference;
+      toast.success("Payment Successful! Syncing...");
       
-      // 2. THE FIX: Explicitly handle the database sync on success
-      callback: async (response: any) => {
-        const reference = response.reference;
-        const toastId = toast.loading("Verifying settlement with bank...");
+      // Call our manual sync logic
+      saveTransactionToSupabase(ref);
+    },
+    onClose: function() {
+      toast.info("Window closed");
+    }
+  });
 
-        try {
-          // Manually push the transaction to Supabase immediately
-          const { error } = await supabase.from("transactions").insert([
-            {
-              user_id: user?.id,
-              amount: 5000,
-              type: "credit",
-              status: "success",
-              reference: reference,
-              description: "Paystack Card/Transfer Deposit",
-              category: "Settlement",
-            },
-          ]);
+  handler.openIframe();
+};
 
-          if (error) throw error;
+// Separate this function to keep the logic clean
+const saveTransactionToSupabase = async (reference: string) => {
+  const { error } = await supabase.from("transactions").insert([
+    {
+      user_id: user?.id,
+      amount: 5000,
+      type: "credit",
+      status: "success",
+      reference: reference,
+      description: "Paystack Online Deposit",
+      category: "Settlement",
+    },
+  ]);
 
-          toast.success("₦5,000.00 Ledger Balance Updated", { id: toastId });
-          
-          // 3. Re-fetch all transactions so the table shows the new row
-          await fetchTransactions();
-          
-        } catch (err: any) {
-          console.error("Manual Sync Error:", err);
-          toast.error("Payment successful, but failed to sync ledger.", { id: toastId });
-        }
-      },
-      onClose: () => {
-        toast.info("Transaction cancelled by user");
-      }
-    });
-    handler.openIframe();
-  };
+  if (!error) {
+    toast.success("₦5,000 added to ledger");
+    fetchTransactions();
+  } else {
+    console.error("Sync Error:", error);
+    toast.error("Database sync failed");
+  }
+};
 
   const copyToClipboard = () => {
     if (!profile.merchantId) return;
