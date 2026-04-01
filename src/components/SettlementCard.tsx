@@ -4,38 +4,67 @@ import { useTransactionStore } from "@/store/useTransactionStore";
 import { Copy, CheckCircle2, Landmark, Wallet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase"; // 1. Import Supabase
 
 export const SettlementCard = () => {
-  console.log("SettlementCard Component Rendered");
   const { profile, user, fetchTransactions } = useTransactionStore();
   const [isCopying, setIsCopying] = useState(false);
 
- const handlePayment = (e: React.MouseEvent) => {
-  e.preventDefault(); // Stop any parent actions
-  e.stopPropagation(); // Stop the click from "bubbling" up
-  
-  console.log("Click registered");
+  const handlePayment = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+    
+    if (!(window as any).PaystackPop) {
+      toast.error("Payment system initializing... Please wait.");
+      return;
+    }
 
-  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
-  
-  if (!(window as any).PaystackPop) {
-    alert("Paystack script missing from Layout");
-    return;
-  }
+    const handler = (window as any).PaystackPop.setup({
+      key: publicKey,
+      email: user?.email || "test@merchant.com",
+      amount: 5000 * 100,
+      currency: "NGN",
+      metadata: { user_id: user?.id },
+      
+      // 2. THE FIX: Explicitly handle the database sync on success
+      callback: async (response: any) => {
+        const reference = response.reference;
+        const toastId = toast.loading("Verifying settlement with bank...");
 
-  const handler = (window as any).PaystackPop.setup({
-    key: publicKey,
-    email: user?.email || "test@merchant.com",
-    amount: 5000 * 100,
-    currency: "NGN",
-    metadata: { user_id: user?.id },
-    callback: () => {
-      toast.success("Success!");
-      fetchTransactions();
-    },
-  });
-  handler.openIframe();
-};
+        try {
+          // Manually push the transaction to Supabase immediately
+          const { error } = await supabase.from("transactions").insert([
+            {
+              user_id: user?.id,
+              amount: 5000,
+              type: "credit",
+              status: "success",
+              reference: reference,
+              description: "Paystack Card/Transfer Deposit",
+              category: "Settlement",
+            },
+          ]);
+
+          if (error) throw error;
+
+          toast.success("₦5,000.00 Ledger Balance Updated", { id: toastId });
+          
+          // 3. Re-fetch all transactions so the table shows the new row
+          await fetchTransactions();
+          
+        } catch (err: any) {
+          console.error("Manual Sync Error:", err);
+          toast.error("Payment successful, but failed to sync ledger.", { id: toastId });
+        }
+      },
+      onClose: () => {
+        toast.info("Transaction cancelled by user");
+      }
+    });
+    handler.openIframe();
+  };
 
   const copyToClipboard = () => {
     if (!profile.merchantId) return;
@@ -49,8 +78,7 @@ export const SettlementCard = () => {
   return (
     <div className="relative group perspective-1000 space-y-4">
       {/* The Visual Card */}
-      <div className="relative bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl overflow-hidden border border-white/10 transition-all duration-500 hover:rotate-x-2">
-        {/* Animated Background Mesh */}
+      <div className="relative bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl overflow-hidden border border-white/10 transition-all duration-500 hover:shadow-blue-500/10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[80px] rounded-full -mr-20 -mt-20 animate-pulse" />
         
         <div className="relative z-10">
@@ -89,9 +117,8 @@ export const SettlementCard = () => {
         </div>
       </div>
 
-      {/* The "Action" Button sits below the card for better UX */}
       <button 
-      type="button"
+        type="button"
         onClick={handlePayment}
         className="relative z-[100] w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 active:scale-95 group"
       >
