@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     // 2. Verify the Signature
     const hash = crypto
-      .createHmac("sha512", process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!)
+      .createHmac("sha512", process.env.NEXT_PUBLIC_PAYSTACK_SECRET_KEY!)
       .update(rawBody)
       .digest("hex");
 
