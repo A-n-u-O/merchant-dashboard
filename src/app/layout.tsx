@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Apex Merchant Ledger | Real-Time Business Settlements",
   description: "A high-fidelity dashboard for SMEs to track settlements, manage transaction lifecycles, and monitor business cashflow with integrated Paystack payments.",
   icons: {
-    icon: "/favicon.ico", // This is where you define the icon
+    icon: "/favicon.ico", 
   },
 };
 
