@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   title: "Apex Merchant Ledger | Real-Time Business Settlements",
   description: "A high-fidelity dashboard for SMEs to track settlements, manage transaction lifecycles, and monitor business cashflow with integrated Paystack payments.",
   icons: {
-    icon: "/favicon.ico", 
+    icon: '/favicon.ico',           // Main browser tab icon
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',       // For iOS home screen
   },
 };
 
