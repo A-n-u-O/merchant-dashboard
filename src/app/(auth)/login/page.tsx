@@ -2,27 +2,38 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ArrowRight, ShieldCheck, Store, Mail, Lock, Globe, Zap, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  Loader2,
+  ArrowRight,
+  ShieldCheck,
+  Store,
+  Mail,
+  Lock,
+  Globe,
+  Zap,
+  Eye,
+  EyeOff,
+  BarChart3
+} from "lucide-react"; import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { supabase } from "@/lib/supabase";
 
-const rightPanelContent = [
+const marketingSlides = [
   {
-    icon: <Globe className="w-12 h-12 text-indigo-500" />,
-    title: "Global Settlements",
-    subtitle: "Instant cross-border visibility for your merchant accounts",
+    icon: <BarChart3 className="w-12 h-12 text-blue-500" />,
+    title: "Track Every Kobo",
+    subtitle: "Stop guessing your profits. See exactly where your money is coming from and where it's going—all in one clean dashboard.",
   },
   {
-    icon: <Zap className="w-12 h-12 text-teal-500" />,
-    title: "Lightning Fast",
-    subtitle: "Real-time ledger updates with bank-grade reliability",
+    icon: <Zap className="w-12 h-12 text-amber-500" />,
+    title: "Instant Paystack Sync",
+    subtitle: "Connect your Paystack account and watch your settlements appear automatically. No more manual spreadsheets.",
   },
   {
-    icon: <ShieldCheck className="w-12 h-12 text-violet-500" />,
-    title: "Ironclad Security",
-    subtitle: "Enterprise-grade protection for every transaction",
+    icon: <ShieldCheck className="w-12 h-12 text-emerald-500" />,
+    title: "Built for Growth",
+    subtitle: "Whether you're a side-hustler or a growing startup, our ledger scales with your business volume and security needs.",
   },
 ];
 
@@ -36,14 +47,13 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
-  
-  // Destructure the actions we need from the store
+
   const { setUser, fetchProfile } = useTransactionStore();
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % rightPanelContent.length);
-    }, 3200);
+      setCurrentSlide((prev) => (prev + 1) % marketingSlides.length);
+    }, 4500); // Slightly slower for better reading
     return () => clearInterval(interval);
   }, []);
 
@@ -53,133 +63,112 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        // --- LOGIN FLOW ---
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        
-        // 1. Set the user in global state
+
         setUser(data.user);
-        
-        // 2. Force wait for profile data to hit the store
         await fetchProfile();
-        
-        // 3. Get the fresh name from the store for the toast
         const freshProfile = useTransactionStore.getState().profile;
-        // toast.success(`Welcome back, ${freshProfile.businessName || 'Merchant'}`);
-        
+        toast.success(`Welcome back, ${freshProfile.businessName || 'Business Owner'}`);
         router.push("/");
       } else {
-        // --- SIGNUP FLOW ---
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        
+
         if (data.user) {
-          // Create the profile record in Supabase
           const { error: profileError } = await supabase.from('profiles').insert([
             {
               id: data.user.id,
               business_name: businessName,
               merchant_id: `MID-${Math.floor(100000 + Math.random() * 900000)}`,
-              tier: "Level 1"
+              tier: "Basic"
             }
           ]);
-          
+
           if (profileError) throw profileError;
 
           setUser(data.user);
           await fetchProfile();
-          toast.success("Merchant Account Activated");
+          toast.success("Welcome to the Ledger!");
           router.push("/");
         }
       }
     } catch (error: any) {
-      console.error("Auth Error:", error);
-      toast.error(error.message || "Authentication failed.");
+      toast.error(error.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen premium-gradient flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] bg-indigo-400/20 rounded-full blur-[140px] orb pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-15%] w-[700px] h-[700px] bg-teal-400/15 rounded-full blur-[160px] orb pointer-events-none" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
+      {/* Soft Background Accents */}
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-6xl gap-12 items-center relative z-10">
-        
-        {/* Form Panel */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="glass-card w-full max-w-md mx-auto p-10 rounded-[2.5rem] shadow-2xl border border-white/40 bg-white/80 backdrop-blur-xl"
-        >
-          <div className="text-center mb-10">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/20">
-              <ShieldCheck className="text-white w-9 h-9" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative z-10">
+
+        {/* Left: Simplified Form Panel */}
+        <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+          <div className="mb-10">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-6">
+              <BarChart3 className="text-white w-6 h-6" />
             </div>
-            <h1 className="text-4xl font-black tracking-tighter text-slate-900 mt-6 uppercase">
-              {isLogin ? "Portal Access" : "Join the Ledger"}
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              {isLogin ? "Welcome back" : "Start your ledger"}
             </h1>
-            <p className="text-slate-500 mt-2 font-medium">Bank-grade settlement monitoring</p>
+            <p className="text-slate-500 mt-2">
+              {isLogin ? "Login to manage your business transactions." : "Create an account to track your daily sales and settlements."}
+            </p>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-5">
-            <AnimatePresence mode="wait">
-              {!isLogin && (
-                <motion.div
-                  key="business-field"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5 overflow-hidden"
-                >
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Identity</label>
-                  <div className="relative group">
-                    <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <input
-                      required
-                      value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:border-indigo-600 transition-all placeholder:text-slate-300"
-                      placeholder="e.g. Anu Ventures"
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700 ml-1">Registered Business Name</label>
+                <div className="relative group">
+                  <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    required
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400"
+                    placeholder="e.g. Anu Ventures"
+                  />
+                </div>
+              </div>
+            )}
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Identifier</label>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700 ml-1">Email Address</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:border-indigo-600 transition-all placeholder:text-slate-300"
-                  placeholder="name@merchant.com"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400"
+                  placeholder="name@company.com"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Secure Password</label>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700 ml-1">Password</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-4 bg-white border-2 border-slate-100 rounded-2xl font-bold text-slate-900 outline-none focus:border-indigo-600 transition-all placeholder:text-slate-300"
+                  className="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -189,10 +178,10 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 active:scale-95 text-white font-black rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-50"
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-2 shadow-lg shadow-blue-200"
             >
-              {loading ? <Loader2 className="animate-spin w-6 h-6" /> : (
-                <>{isLogin ? "Authenticate Ledger" : "Create Merchant Account"} <ArrowRight className="w-5 h-5" /></>
+              {loading ? <Loader2 className="animate-spin w-5 h-5" /> : (
+                <>{isLogin ? "Sign In" : "Create My Account"} <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           </form>
@@ -200,39 +189,51 @@ export default function AuthPage() {
           <div className="mt-8 text-center">
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="text-xs font-black uppercase tracking-[0.1em] text-slate-400 hover:text-indigo-600 transition-colors underline decoration-slate-200"
+              className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
             >
-              {isLogin ? "Need a merchant license? Sign Up" : "Registered Merchant? Log In"}
+              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
             </button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Marketing Panel */}
-        <div className="hidden lg:flex flex-col items-center justify-center h-full relative">
+        {/* Right: Informative Marketing Panel */}
+        <div className="hidden lg:flex flex-col items-center justify-center bg-slate-900 p-12 relative overflow-hidden">
+          {/* Subtle decoration */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-3xl rounded-full -mr-32 -mt-32" />
+
           <AnimatePresence mode="wait">
             <motion.div
               key={currentSlide}
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.5 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4 }}
               className="text-center max-w-sm"
             >
-              <div className="mx-auto mb-10 w-24 h-24 bg-white/40 backdrop-blur-2xl rounded-[2rem] flex items-center justify-center shadow-2xl border border-white/50">
-                {rightPanelContent[currentSlide].icon}
+              <div className="mx-auto mb-8 w-20 h-20 bg-white/5 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-white/10">
+                {marketingSlides[currentSlide].icon}
               </div>
-              <h2 className="text-5xl font-black tracking-tighter text-slate-900 mb-6 uppercase leading-[0.9]">
-                {rightPanelContent[currentSlide].title}
+
+              <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
+                {marketingSlides[currentSlide].title}
               </h2>
-              <p className="text-lg text-slate-600 font-medium leading-relaxed">
-                {rightPanelContent[currentSlide].subtitle}
+              <p className="text-slate-400 leading-relaxed">
+                {marketingSlides[currentSlide].subtitle}
               </p>
             </motion.div>
           </AnimatePresence>
-          <div className="flex gap-3 mt-12">
-            {rightPanelContent.map((_, i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide ? "bg-indigo-600 w-8" : "bg-slate-300 w-2"}`} />
+
+          <div className="flex gap-2 mt-12">
+            {marketingSlides.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === currentSlide ? "bg-blue-500 w-6" : "bg-white/20 w-1.5"}`}
+              />
             ))}
+          </div>
+
+          <div className="mt-16 pt-8 border-t border-white/5 w-full text-center">
+            <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Trust by Local Merchants</p>
           </div>
         </div>
       </div>
